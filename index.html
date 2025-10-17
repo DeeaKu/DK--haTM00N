@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>DeeaKuma — Login</title>
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="firebase-config.js"></script>
+</head>
+<body class="background">
+  <div class="login-container glass-effect">
+    <h2>Welcome to <span style="color:#ff69b4;">DeeaKuma</span></h2>
+
+    <input type="email" id="email" placeholder="Enter your email (e.g. you@example.com)">
+    <input type="password" id="password" placeholder="Enter your password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <script>
+    function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      if (!email || !email.includes('@') || !email.includes('.')) {
+        alert("⚠️ Please enter a valid email address.");
+        return;
+      }
+
+      if (!password) {
+        alert("⚠️ Please enter your password.");
+        return;
+      }
+
+      firebase.auth().signInWithEmailAndPassword(email, password)
+        .then(() => {
+          window.location.href = "chat.html";
+        })
+        .catch(error => {
+          alert("Login failed: " + error.message);
+        });
+    }
+  </script>
+</body>
+</html>
+
