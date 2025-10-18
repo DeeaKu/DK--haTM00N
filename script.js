@@ -67,8 +67,8 @@ function logout() {
 
   const EMOJIS = [
     "😀","😁","😂","🤣","😊","😍","😘","😎","🤩","🤔",
-    "😅","😢","😭","😡","👍","👎","🙏","👏","🎉","🔥",
-    "❤️","💔","🤝","🤗","🤖","🙈","🌟","😴","🥳","🍕"
+    "😅","🌑","😭","😡","👍","👎","🙏","👏","🎉","🔥",
+    "❤️","✨","🤝","🤗","🦋","🙈","🌟","😴","🥳","🍕"
   ];
 
   const pop = document.createElement('div');
@@ -123,3 +123,4 @@ function logout() {
   window.addEventListener('resize', hidePopover);
   window.addEventListener('scroll', hidePopover);
 })();
+
