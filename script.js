@@ -1,5 +1,6 @@
 let currentUser;
 
+// Firebase Auth
 firebase.auth().onAuthStateChanged(user => {
   if (!user) {
     window.location.href = "index.html";
@@ -10,6 +11,7 @@ firebase.auth().onAuthStateChanged(user => {
   }
 });
 
+// Send Message
 function sendMessage() {
   const input = document.getElementById("messageInput");
   const message = input.value.trim();
@@ -25,6 +27,7 @@ function sendMessage() {
   input.value = "";
 }
 
+// Load Messages
 function loadMessages() {
   const chatRef = firebase.database().ref("messages");
   chatRef.on("value", snapshot => {
@@ -42,7 +45,7 @@ function loadMessages() {
         div.classList.add("other");
       }
 
-      div.innerHTML = `<strong>${escapeHtml(data.user)}</strong><br>${escapeHtml(data.message)}<br><small>${new Date(data.timestamp).toLocaleString()}</small>`;
+      div.innerHTML = `<strong>${data.user}</strong><br>${data.message}<br><small>${new Date(data.timestamp).toLocaleString()}</small>`;
       chatBox.appendChild(div);
     });
 
@@ -56,97 +59,67 @@ function logout() {
   });
 }
 
-/* -----------------------------
-   Emoji Picker: robust init
-   ----------------------------- */
+// ✅ Custom Local Emoji Picker (no CDN)
+(function() {
+  const emojiBtn = document.getElementById('emojiBtn');
+  const input = document.getElementById('messageInput');
+  if (!emojiBtn || !input) return;
 
-function escapeHtml(str) {
-  if (!str) return '';
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
+  const EMOJIS = [
+    "😀","😁","😂","🤣","😊","😍","😘","😎","🤩","🤔",
+    "😅","😢","😭","😡","👍","👎","🙏","👏","🎉","🔥",
+    "❤️","💔","🤝","🤗","🤖","🙈","🌟","😴","🥳","🍕"
+  ];
 
-/**
- * Wait for a global (like EmojiButton) to appear on window
- * tries every `intervalMs` for up to `timeoutMs`
- */
-function waitForGlobal(name, intervalMs = 100, timeoutMs = 5000) {
-  return new Promise((resolve, reject) => {
-    const start = Date.now();
-    const iv = setInterval(() => {
-      const val = window[name];
-      if (val) {
-        clearInterval(iv);
-        resolve(val);
-      } else if (Date.now() - start > timeoutMs) {
-        clearInterval(iv);
-        reject(new Error(`${name} not found on window after ${timeoutMs}ms`));
-      }
-    }, intervalMs);
-  });
-}
-
-document.addEventListener("DOMContentLoaded", async () => {
-  const emojiBtn = document.querySelector('#emojiBtn');
-  const input = document.querySelector('#messageInput');
-
-  if (!emojiBtn || !input) {
-    console.warn('Emoji or input element missing (#emojiBtn or #messageInput).');
-    return;
-  }
-
-  // Ensure the emoji library is loaded. Some CDNs or caching may delay it.
-  try {
-    // Wait for the script to create a global named EmojiButton (up to 5s)
-    await waitForGlobal('EmojiButton', 100, 5000);
-
-    // The UMD build sometimes places the constructor at window.EmojiButton
-    // and sometimes at window.EmojiButton.default — handle both.
-    const EmojiCtor = window.EmojiButton || (window.EmojiButton && window.EmojiButton.default) || null;
-
-    if (!EmojiCtor) {
-      console.error('EmojiButton found but constructor not available. window.EmojiButton:', window.EmojiButton);
-      return;
-    }
-
-    const picker = new EmojiCtor({
-      position: 'top-end',
-      autoHide: false,
-      showPreview: false,
-      showRecents: true,
-      theme: 'dark'
-    });
-
-    picker.on('emoji', emoji => {
-      // Insert emoji at caret position (not just append)
-      insertAtCursor(input, emoji);
+  const pop = document.createElement('div');
+  pop.className = 'emoji-popover';
+  EMOJIS.forEach(e => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'emoji-item';
+    btn.innerText = e;
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      insertAtCursor(input, e);
       input.focus();
+      hidePopover();
     });
+    pop.appendChild(btn);
+  });
+  document.body.appendChild(pop);
 
-    emojiBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      picker.togglePicker(emojiBtn);
-    });
-
-    // good feedback
-    console.log('Emoji picker initialized.');
-  } catch (err) {
-    console.error('Emoji picker failed to initialize:', err);
+  function insertAtCursor(el, text) {
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? start;
+    el.value = el.value.slice(0, start) + text + el.value.slice(end);
+    el.selectionStart = el.selectionEnd = start + text.length;
   }
-});
 
-/* Utility: insert text at cursor for textarea/input */
-function insertAtCursor(el, text) {
-  if (!el) return;
-  // For inputs and textareas
-  const start = el.selectionStart || 0;
-  const end = el.selectionEnd || 0;
-  const before = el.value.substring(0, start);
-  const after = el.value.substring(end);
-  el.value = before + text + after;
-  // move caret after inserted text
-  const caret = start + text.length;
-  el.selectionStart = el.selectionEnd = caret;
-}
+  function showPopover() {
+    const rect = emojiBtn.getBoundingClientRect();
+    pop.style.left = (rect.left + window.scrollX) + 'px';
+    pop.style.top = (rect.top + window.scrollY - pop.offsetHeight - 8) + 'px';
+    pop.style.display = 'flex';
+  }
+
+  function hidePopover() {
+    pop.style.display = 'none';
+  }
+
+  emojiBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (pop.style.display === 'flex') hidePopover();
+    else showPopover();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!pop.contains(e.target) && e.target !== emojiBtn) hidePopover();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hidePopover();
+  });
+
+  window.addEventListener('resize', hidePopover);
+  window.addEventListener('scroll', hidePopover);
+})();
