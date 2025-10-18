@@ -1,6 +1,6 @@
 let currentUser;
 
-// 🔥 Auth listener
+// Firebase Auth
 firebase.auth().onAuthStateChanged(user => {
   if (!user) {
     window.location.href = "index.html";
@@ -11,7 +11,7 @@ firebase.auth().onAuthStateChanged(user => {
   }
 });
 
-// 📤 Send Message
+// Send Message
 function sendMessage() {
   const input = document.getElementById("messageInput");
   const message = input.value.trim();
@@ -27,7 +27,7 @@ function sendMessage() {
   input.value = "";
 }
 
-// 📥 Load Messages + Add Edit/Delete buttons
+// Load Messages
 function loadMessages() {
   const chatRef = firebase.database().ref("messages");
   chatRef.on("value", snapshot => {
@@ -36,30 +36,16 @@ function loadMessages() {
 
     snapshot.forEach(child => {
       const data = child.val();
-      const msgKey = child.key;
-
       const div = document.createElement("div");
       div.classList.add("chat-message");
-      div.classList.add(data.user === currentUser.email ? "self" : "other");
 
-      // Message content
-      let messageHTML = `
-        <strong>${data.user}</strong><br>
-        <span class="message-text">${data.message}</span><br>
-        <small>${new Date(data.timestamp).toLocaleString()}</small>
-      `;
-
-      // 🧩 Only show edit/delete if it's your message
       if (data.user === currentUser.email) {
-        messageHTML += `
-          <div class="message-actions">
-            <button onclick="editMessage('${msgKey}', '${data.message.replace(/'/g, "\\'")}')">✏️ Edit</button>
-            <button onclick="deleteMessage('${msgKey}')">🗑️ Delete</button>
-          </div>
-        `;
+        div.classList.add("self");
+      } else {
+        div.classList.add("other");
       }
 
-      div.innerHTML = messageHTML;
+      div.innerHTML = `<strong>${data.user}</strong><br>${data.message}<br><small>${new Date(data.timestamp).toLocaleString()}</small>`;
       chatBox.appendChild(div);
     });
 
@@ -67,49 +53,74 @@ function loadMessages() {
   });
 }
 
-// ✏️ Edit Message
-function editMessage(key, oldText) {
-  const newText = prompt("Edit your message:", oldText);
-  if (newText !== null && newText.trim() !== "") {
-    firebase.database().ref("messages/" + key).update({
-      message: newText.trim()
-    });
-  }
-}
-
-// 🗑️ Delete Message
-function deleteMessage(key) {
-  if (confirm("Are you sure you want to delete this message?")) {
-    firebase.database().ref("messages/" + key).remove();
-  }
-}
-
-// 🚪 Logout
 function logout() {
   firebase.auth().signOut().then(() => {
     window.location.href = "index.html";
   });
 }
 
-// 😀 Emoji Picker Integration (stable)
-const emojiBtn = document.querySelector('#emojiBtn');
-const input = document.querySelector('#messageInput');
+// ✅ Custom Local Emoji Picker (no CDN)
+(function() {
+  const emojiBtn = document.getElementById('emojiBtn');
+  const input = document.getElementById('messageInput');
+  if (!emojiBtn || !input) return;
 
-const picker = new EmojiButton({
-  position: 'top-end',
-  theme: 'auto',
-  showPreview: false,
-  showSearch: true,
-  showRecents: true,
-  zIndex: 9999
-});
+  const EMOJIS = [
+    "😀","😁","😂","🤣","😊","😍","😘","😎","🤩","🤔",
+    "😅","😢","😭","😡","👍","👎","🙏","👏","🎉","🔥",
+    "❤️","💔","🤝","🤗","🤖","🙈","🌟","😴","🥳","🍕"
+  ];
 
-emojiBtn.addEventListener('click', (e) => {
-  e.stopPropagation();
-  picker.togglePicker(emojiBtn);
-});
+  const pop = document.createElement('div');
+  pop.className = 'emoji-popover';
+  EMOJIS.forEach(e => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'emoji-item';
+    btn.innerText = e;
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      insertAtCursor(input, e);
+      input.focus();
+      hidePopover();
+    });
+    pop.appendChild(btn);
+  });
+  document.body.appendChild(pop);
 
-picker.on('emoji', (emoji) => {
-  input.value += emoji;
-  input.focus();
-});
+  function insertAtCursor(el, text) {
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? start;
+    el.value = el.value.slice(0, start) + text + el.value.slice(end);
+    el.selectionStart = el.selectionEnd = start + text.length;
+  }
+
+  function showPopover() {
+    const rect = emojiBtn.getBoundingClientRect();
+    pop.style.left = (rect.left + window.scrollX) + 'px';
+    pop.style.top = (rect.top + window.scrollY - pop.offsetHeight - 8) + 'px';
+    pop.style.display = 'flex';
+  }
+
+  function hidePopover() {
+    pop.style.display = 'none';
+  }
+
+  emojiBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (pop.style.display === 'flex') hidePopover();
+    else showPopover();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!pop.contains(e.target) && e.target !== emojiBtn) hidePopover();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hidePopover();
+  });
+
+  window.addEventListener('resize', hidePopover);
+  window.addEventListener('scroll', hidePopover);
+})();
+
