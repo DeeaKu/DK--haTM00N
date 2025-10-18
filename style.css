@@ -1,4 +1,4 @@
-/* Background image */
+/* 🌌 Background */
 body.background {
   background: url('background.jpg') no-repeat center center fixed;
   background-size: cover;
@@ -8,7 +8,7 @@ body.background {
   color: white;
 }
 
-/* 🧊 Glassmorphism effect base */
+/* 🧊 Glassmorphism Base */
 .glass-effect {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(12px);
@@ -18,8 +18,7 @@ body.background {
   border-radius: 15px;
 }
 
-/* Slightly lighter glass for inner areas */
-.glass-input, .glass-inner {
+.glass-inner {
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -137,6 +136,11 @@ body.background {
   background: transparent;
   border: none;
   cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.emoji-button:hover {
+  transform: scale(1.2);
 }
 
 .input-area button {
@@ -151,4 +155,39 @@ body.background {
 
 .input-area button:hover {
   background-color: #339dff;
+}
+
+/* 🥳 Local Emoji Popover */
+.emoji-popover {
+  position: absolute;
+  display: none;
+  gap: 6px;
+  flex-wrap: wrap;
+  width: 260px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(25,25,25,0.92);
+  color: white;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+  z-index: 9999;
+  backdrop-filter: blur(6px);
+}
+
+.emoji-popover button.emoji-item {
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .08s ease;
+}
+
+.emoji-popover button.emoji-item:hover {
+  transform: scale(1.15);
+  background: rgba(255,255,255,0.06);
 }
